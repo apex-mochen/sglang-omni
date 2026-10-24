@@ -153,7 +153,8 @@ class OutputConverter:
         self.audio: bool = False
         self.serial: int = 0
 
-    def finish(self) -> list[OutputEvent]:
+    def finish(self, is_speech_cut: bool) -> list[OutputEvent]:
+        """End the open response, incomplete when the talker's budget cut its speech."""
         if self.response_id is None:
             return []
         else:
@@ -170,8 +171,8 @@ class OutputConverter:
                     self.item_id,
                     self.text,
                     self.audio,
-                    "completed",
-                    "stop",
+                    "incomplete" if is_speech_cut else "completed",
+                    "max_output_tokens" if is_speech_cut else "stop",
                 )
             )
             self.response_id = None
@@ -205,7 +206,7 @@ class OutputConverter:
         else:
             pass
         if value["end_of_turn"] or output.eos:
-            events.extend(self.finish())
+            events.extend(self.finish(value["is_speech_cut"]))
         else:
             pass
         return events
